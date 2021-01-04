@@ -1,0 +1,570 @@
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #define uchar unsigned char
+   3          #define uint  unsigned  int
+   4          
+   5          
+   6          sbit key1 = P1^2;          //按键输入
+   7          sbit key2 = P1^3;
+   8          sbit key3 = P1^4;
+   9          
+  10          sbit LED  = P1^0;          //光强度报警指示灯
+  11          sbit FENG = P1^1;          //风扇去湿
+  12          sbit FMQ  = P1^5;          //蜂鸣器
+  13          
+  14          sbit JDQ_S = P1^7;        //加湿继电器
+  15          
+  16          sbit JDQ_R = P3^7;        // 加热继电器
+  17          sbit JDQ_L = P3^6;        //制冷继电器
+  18          
+  19          unsigned char key_mode=0;
+  20          unsigned char Set_mode=0;   //设置模式
+  21          
+  22          uint wendu;      //     温度数值
+  23          uchar light;
+  24          bit baojing=1;  //报警标志
+  25          int set_w_num_H=38,set_w_num_L=10;   //设置的上下限数值
+  26          int set_s_num_H=80,set_s_num_L=0;
+  27          int set_g_num_H=50,set_g_num_L=0;
+  28          
+  29          #include<Lcd12864.h>               //头文件
+  30          #include<dht11.c>
+  31          #include<adc0832.c>
+  32          #include<eeprom.c>
+  33          
+  34          void Delay(uchar t)                             //延时程序
+  35          {
+  36   1          uint i,j;  
+  37   1              for(i=t;i>0;i--)   
+  38   1              for(j=110;j>0;j--);     
+  39   1      
+  40   1      } 
+  41          //按键扫面
+  42           void scant()
+  43            {
+  44   1                      if(!key1){
+  45   2                      
+  46   2                                              while(!key1);
+  47   2                                              if(key_mode<6){
+  48   3                                                              key_mode++;
+  49   3                                                              
+  50   3                                              }
+  51   2                                              else{                                          
+  52   3                                                              key_mode=0;
+  53   3                                                              Set_mode=0;
+  54   3                                                              Lcd_ShowSring(4,6," ");
+  55   3                                                      //      Lcd_ShowSring(2,0,"             ");
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 2   
+
+  56   3                                                              ISP_ERASE(0x2c00);              //注意：字节编程时必须要先要擦除整个扇区        
+  57   3                                                              ISP_PROGRAM(0x2c00, set_w_num_H/256);
+  58   3                                                              ISP_PROGRAM(0x2c01, set_w_num_H);
+  59   3                                                              /////////////////////////////////////
+  60   3                                                              ISP_PROGRAM(0x2c02, set_w_num_L/256);
+  61   3                                                              ISP_PROGRAM(0x2c03, set_w_num_L);
+  62   3                                                        /////////////////////////////////////////
+  63   3                                                              ISP_PROGRAM(0x2c04, set_s_num_H/256);
+  64   3                                                              ISP_PROGRAM(0x2c05, set_s_num_H);
+  65   3                                                         /////////////////////////////////////////
+  66   3                                                              ISP_PROGRAM(0x2c06, set_s_num_L/256);
+  67   3                                                              ISP_PROGRAM(0x2c07, set_s_num_L);
+  68   3                                                       /////////////////////////////////////////
+  69   3      
+  70   3                                                              ISP_PROGRAM(0x2c08, set_g_num_H/256);
+  71   3                                                              ISP_PROGRAM(0x2c09, set_g_num_H);
+  72   3                                                         /////////////////////////////////////////
+  73   3                                                              ISP_PROGRAM(0x2c0a, set_g_num_L/256);
+  74   3                                                              ISP_PROGRAM(0x2c0b, set_g_num_L);
+  75   3      
+  76   3      
+  77   3                                              }
+  78   2                                      
+  79   2                              }
+  80   1                              switch(key_mode){
+  81   2                                              case 0: Lcd_ShowSring(1,7," "); break;
+  82   2                                                     
+  83   2                               /////////////==========温度通道========////////////////////////////////
+  84   2                                              case 1: Lcd_ShowSring(1,7,"1");FMQ=1;FENG=1;Set_mode=1;Lcd_ShowSring(2,6,"H");
+  85   2                                                      JDQ_R=1;JDQ_L=1;JDQ_S=1;Lcd_ShowSring(2,7,"  ");Lcd_ShowSring(3,7,"  ");
+  86   2                                                              Lcd_ShowSring(4,7,"  ");break;
+  87   2                                              case 2: Lcd_ShowSring(1,7,"1");Lcd_ShowSring(2,6,"L");break;
+  88   2                               /////////////==========湿度通道========////////////////////////////////
+  89   2                                              case 3: Lcd_ShowSring(1,7,"2");Lcd_ShowSring(3,6,"H");Lcd_ShowSring(2,6,"  ");break;
+  90   2                                              case 4: Lcd_ShowSring(1,7,"2");Lcd_ShowSring(3,6,"L");break;
+  91   2                               /////////////==========光度通道========////////////////////////////////
+  92   2                                              case 5: Lcd_ShowSring(1,7,"3");Lcd_ShowSring(4,6,"H");Lcd_ShowSring(3,6,"  ");break;
+  93   2                                              case 6: Lcd_ShowSring(1,7,"3");Lcd_ShowSring(4,6,"L");break;
+  94   2                                              default :break;
+  95   2                                   }
+  96   1                      
+  97   1      ///////////////////////////////////////////////////////////////////////////////////////////////////
+  98   1                       //模式a，通道温度进行设置加减    //温度上限
+  99   1                      if(key_mode==1){
+ 100   2                                       if(!key2){
+ 101   3                                              Delay(10);
+ 102   3                                              if(!key2){
+ 103   4                                              ///             while(!key2);
+ 104   4                                                              if(set_w_num_H<99) {
+ 105   5      
+ 106   5                                                                      set_w_num_H++;
+ 107   5                                                              }
+ 108   4                                                              else {
+ 109   5                                                                      set_w_num_H=0;
+ 110   5                                                              }                                                       
+ 111   4                                                       
+ 112   4                                              }
+ 113   3                                              
+ 114   3                                      }
+ 115   2                                       if(!key3){
+ 116   3                                              Delay(10);
+ 117   3                                              if(!key3){
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 3   
+
+ 118   4                                              //              while(!key3);
+ 119   4                                                              if(set_w_num_H>0) {
+ 120   5      
+ 121   5                                                                              set_w_num_H--;
+ 122   5                                                              }
+ 123   4                                                              else {
+ 124   5                                                                         set_w_num_H=99;
+ 125   5                                                              }
+ 126   4      
+ 127   4                                              }
+ 128   3                                              
+ 129   3                                      }
+ 130   2                                               Lcd_Display22data(2,3,set_w_num_H);
+ 131   2      
+ 132   2                      }
+ 133   1              if(key_mode==2){                                                  //下限
+ 134   2                                       if(!key2){
+ 135   3                                              Delay(10);
+ 136   3                                              if(!key2){
+ 137   4                                              ///             while(!key2);
+ 138   4                                                              if(set_w_num_L<99) {
+ 139   5      
+ 140   5                                                                      set_w_num_L++;
+ 141   5                                                              }
+ 142   4                                                              else {
+ 143   5                                                                      set_w_num_L=0;
+ 144   5                                                              }                                                       
+ 145   4                                              
+ 146   4                                              }
+ 147   3                                              
+ 148   3                                      }
+ 149   2                                       if(!key3){
+ 150   3                                              Delay(10);
+ 151   3                                              if(!key3){
+ 152   4                                              //              while(!key3);
+ 153   4                                                              if(set_w_num_L>0) {
+ 154   5      
+ 155   5                                                                              set_w_num_L--;
+ 156   5                                                              }
+ 157   4                                                              else {
+ 158   5                                                                         set_w_num_L=99;
+ 159   5                                                              }
+ 160   4                                                      
+ 161   4                                              }
+ 162   3                                              
+ 163   3                                      }
+ 164   2                                        Lcd_Display22data(2,3,set_w_num_L);
+ 165   2      
+ 166   2                      }
+ 167   1      //////////////////////模式b，湿度进行设置加减/////////////////////////////////////湿度上限
+ 168   1              if(key_mode==3){
+ 169   2                                       if(!key2){
+ 170   3                                              Delay(10);
+ 171   3                                              if(!key2){
+ 172   4                              
+ 173   4                                                              if(set_s_num_H<99) {
+ 174   5      
+ 175   5                                                                              set_s_num_H++;
+ 176   5                                                              }
+ 177   4                                                              else {
+ 178   5                                                                              set_s_num_H=0;
+ 179   5                                                              }       
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 4   
+
+ 180   4                      
+ 181   4                                              }
+ 182   3                                              
+ 183   3                                      }
+ 184   2                                       if(!key3){
+ 185   3                                              Delay(10);
+ 186   3                                              if(!key3){
+ 187   4                              
+ 188   4                                                              if(set_s_num_H>0) {
+ 189   5      
+ 190   5                                                                              set_s_num_H--;
+ 191   5                                                              }
+ 192   4                                                              else {
+ 193   5                                                                              set_s_num_H=99;
+ 194   5                                                              }
+ 195   4                                              
+ 196   4                                              }
+ 197   3                                              
+ 198   3                                      }
+ 199   2                                   Lcd_Display2data(3,3,set_s_num_H);   
+ 200   2                      }
+ 201   1                      if(key_mode==4){                                                         //湿度下限
+ 202   2                                       if(!key2){
+ 203   3                                              Delay(100);
+ 204   3                                              if(!key2){
+ 205   4                                      //                      while(!key2);
+ 206   4                                                              if(set_s_num_L<99) {
+ 207   5      
+ 208   5                                                                              set_s_num_L++;
+ 209   5                                                              }
+ 210   4                                                              else {
+ 211   5                                                                              set_s_num_L=0;
+ 212   5                                                              }       
+ 213   4                                                        
+ 214   4                                              }
+ 215   3                                              
+ 216   3                                      }
+ 217   2                                       if(!key3){
+ 218   3                                              Delay(10);
+ 219   3                                              if(!key3){
+ 220   4                                      //                      while(!key3);
+ 221   4                                                              if(set_s_num_L>0) {
+ 222   5      
+ 223   5                                                                              set_s_num_L--;
+ 224   5                                                              }
+ 225   4                                                              else {
+ 226   5                                                                              set_s_num_L=99;
+ 227   5                                                              }
+ 228   4                                                        
+ 229   4                                              }
+ 230   3                                              
+ 231   3                                      }
+ 232   2                                   Lcd_Display2data(3,3,set_s_num_L);   
+ 233   2                      }
+ 234   1      
+ 235   1      //////////////////////模式c，光度进行设置加减/////////////////////////////////////光度上限
+ 236   1                               if(key_mode==5){                                                        //guang度shang限
+ 237   2                                       if(!key2){
+ 238   3                                              Delay(10);
+ 239   3                                              if(!key2){
+ 240   4                                      //                      while(!key2);
+ 241   4                                                              if(set_g_num_H<100) {
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 5   
+
+ 242   5      
+ 243   5                                                                              set_g_num_H++;
+ 244   5                                                              }
+ 245   4                                                              else {
+ 246   5                                                                              set_g_num_H=0;
+ 247   5                                                              }       
+ 248   4                                                       
+ 249   4                                              }
+ 250   3                                              
+ 251   3                                      }
+ 252   2                                       if(!key3){
+ 253   3                                              Delay(10);
+ 254   3                                              if(!key3){
+ 255   4                                      //                      while(!key3);
+ 256   4                                                              if(set_g_num_H>0) {
+ 257   5      
+ 258   5                                                                              set_g_num_H--;
+ 259   5                                                              }
+ 260   4                                                              else {
+ 261   5                                                                              set_g_num_H=100;
+ 262   5                                                              }
+ 263   4                                                       
+ 264   4                                              }
+ 265   3                                              
+ 266   3                                      }
+ 267   2                                  Lcd_Display3data(4,3,set_g_num_H);    
+ 268   2                      }
+ 269   1                                              
+ 270   1                      if(key_mode==6){                                                         //GUang度下限
+ 271   2                                       if(!key2){
+ 272   3                                              Delay(10);
+ 273   3                                              if(!key2){
+ 274   4                                      //                      while(!key2);
+ 275   4                                                              if(set_g_num_L<99) {
+ 276   5      
+ 277   5                                                                              set_g_num_L++;
+ 278   5                                                              }
+ 279   4                                                              else {
+ 280   5                                                                              set_g_num_L=0;
+ 281   5                                                              }       
+ 282   4                                                       
+ 283   4                                              }
+ 284   3                                              
+ 285   3                                      }
+ 286   2                                       if(!key3){
+ 287   3                                              Delay(10);
+ 288   3                                              if(!key3){
+ 289   4                                      //                      while(!key3);
+ 290   4                                                              if(set_g_num_L>0) {
+ 291   5      
+ 292   5                                                                              set_g_num_L--;
+ 293   5                                                              }
+ 294   4                                                              else {
+ 295   5                                                                              set_g_num_L=99;
+ 296   5                                                              }
+ 297   4                                              
+ 298   4                                              }
+ 299   3                                              
+ 300   3                                      }
+ 301   2                                   Lcd_Display3data(4,3,set_g_num_L);   
+ 302   2                      }
+ 303   1              /////////////////////////////////////////////////////////////////////////////
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 6   
+
+ 304   1                              
+ 305   1                      
+ 306   1      }
+ 307          void campare_wendu()    //比较 报警
+ 308          {
+ 309   1            
+ 310   1      
+ 311   1              if(baojing==1){
+ 312   2      
+ 313   2                  if( (U8T_data_H>set_w_num_H||U8T_data_H<set_w_num_L) || (U8RH_data_H>set_s_num_H||U8RH_data_H<set_s_n
+             -um_L)||
+ 314   2                           (light>set_g_num_H||light<set_g_num_L) ) {
+ 315   3                                                      FMQ =~  FMQ; //报警
+ 316   3                                              if( U8T_data_H>set_w_num_H||U8T_data_H<set_w_num_L ){
+ 317   4      
+ 318   4                                                              Lcd_ShowSring(2,7,"W");         
+ 319   4                                              }
+ 320   3                                              else{
+ 321   4                                                         Lcd_ShowSring(2,7," ");      
+ 322   4                                              }
+ 323   3                                              if(U8RH_data_H>set_s_num_H||U8RH_data_H<set_s_num_L){
+ 324   4              
+ 325   4                                                              Lcd_ShowSring(3,7,"S");         
+ 326   4                                              } else{
+ 327   4                                                              Lcd_ShowSring(3,7," "); 
+ 328   4                                              }
+ 329   3                                              if(light>set_g_num_H||light<set_g_num_L){
+ 330   4              
+ 331   4                                    if(light>set_g_num_H){
+ 332   5                                                              Lcd_ShowSring(4,7,"^G");
+ 333   5                                                          }
+ 334   4                                                    else if(light<set_g_num_L){
+ 335   5                                                          Lcd_ShowSring(4,7,"vG");
+ 336   5                                                        }                     
+ 337   4                                              } else{
+ 338   4                                                              Lcd_ShowSring(4,7,"  ");        
+ 339   4                                              }                       
+ 340   3                                      }else{
+ 341   3                                                      Lcd_ShowSring(2,7," "); Lcd_ShowSring(3,7," ");Lcd_ShowSring(4,7,"  ");
+ 342   3                                                      FMQ=1;//解除报警
+ 343   3                                      }
+ 344   2                               }
+ 345   1          
+ 346   1                      
+ 347   1      }
+ 348          void ctrl()        //控制
+ 349          {
+ 350   1               if(baojing==1){
+ 351   2      
+ 352   2                              if( U8T_data_H>set_w_num_H)             //温度大于上限 说明温度高了 要制冷
+ 353   2                              {
+ 354   3                                      JDQ_L=0;                                       //制冷继电器启动
+ 355   3                                              JDQ_R=1;
+ 356   3                              }
+ 357   2                              else if(U8T_data_H<set_w_num_L){                 //温度小于下限 说明温度低了 要加热
+ 358   3              
+ 359   3                                              JDQ_R=0;                                                 //制加热继电器启动
+ 360   3                                              JDQ_L=1;        
+ 361   3                              }
+ 362   2                              else{
+ 363   3                                              JDQ_L=1;                                                 //继电器都不工作
+ 364   3                                              JDQ_R=1;
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 7   
+
+ 365   3                              }
+ 366   2      
+ 367   2                        if(U8RH_data_H>set_s_num_H){                  //湿度大于上限 说明湿度大 要去湿  — 
+ 368   3      
+ 369   3                                              FENG=0;
+ 370   3                                      //      TR0=1;                                          
+ 371   3                                              JDQ_S=1;                                        // 风扇转动
+ 372   3                         }
+ 373   2                        else if(U8RH_data_H<set_s_num_L){             ////湿度小于下限 说明湿度小 要加湿  — 
+ 374   3      
+ 375   3                                          JDQ_S=0;
+ 376   3                                          FENG=1;                                               // 加湿继电器工作
+ 377   3                        }
+ 378   2                        else{
+ 379   3                                              JDQ_S=1;                                          //都不工作
+ 380   3                                              FENG=1;
+ 381   3                           }
+ 382   2               //////////////////////////////////////////////////////////////////////// 
+ 383   2                         if(light>set_g_num_H){                                  //光线充足   
+ 384   3                                          LED=0;
+ 385   3                                      
+ 386   3                         }
+ 387   2                    else if(light<set_g_num_L){                        //光线不充
+ 388   3      
+ 389   3                                          LED=0;
+ 390   3                        }
+ 391   2                        else {
+ 392   3                                          LED=1;
+ 393   3                             }  
+ 394   2      
+ 395   2                }
+ 396   1      
+ 397   1      
+ 398   1      }
+ 399          void us_delay(uchar t) 
+ 400          {  
+ 401   1              while(t--); 
+ 402   1      }  
+ 403          //*********主函数*****************
+ 404          
+ 405          void Uart_Init()                                //使用定时器1作为波特率发生器（STC89C52、STC89C51、AT89C51等均可） 
+ 406          {  
+ 407   1          TMOD = 0x21;
+ 408   1          SCON = 0x50;                                //设置串行方式
+ 409   1          TH1 = 0xFD;                                 //波特率9600
+ 410   1          TL1 = TH1;
+ 411   1          PCON = 0x00;
+ 412   1          EA = 1;                                             //总中断打开 
+ 413   1          ES = 1;                                             //开串口中断  
+ 414   1          TR1 = 1;                                    //启动定时器1
+ 415   1      } 
+ 416          /******************************************************************** 
+ 417          名称：串口发送函数  功能：MCU向无线WIFI模块ESP8266发送数据  
+ 418          ********************************************************************/ 
+ 419          void Send_Uart(uchar value) 
+ 420          {  
+ 421   1              ES=0;                                           //关闭串口中断  
+ 422   1              TI=0;                                           //清发送完毕中断请求标志位   
+ 423   1              SBUF=value;                             //发送  
+ 424   1              while(TI==0);                           //等待发送完毕   
+ 425   1              TI=0;                                           //清发送完毕中断请求标志位   
+ 426   1              ES=1;                                           //允许串口中断
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 8   
+
+ 427   1              TH0=0;
+ 428   1              TL0=0;  
+ 429   1      }  
+ 430          
+ 431          /******************************************************************** 
+ 432          名称：WIFI模块设置函数  作用: 启动模块，以便可以实现无线接入和控制  
+ 433          ********************************************************************/ 
+ 434          
+ 435          void ESP8266_Set(uchar *puf)    // 数组指针*puf指向字符串数组                
+ 436          {    
+ 437   1              while(*puf!='\0')               //遇到空格跳出循环  
+ 438   1              {   
+ 439   2                      Send_Uart(*puf);                //向WIFI模块发送控制指令。   
+ 440   2                      us_delay(5);   
+ 441   2                      puf++;    
+ 442   2              }  
+ 443   1              us_delay(5);  
+ 444   1              Send_Uart('\r');                        //回车  
+ 445   1              us_delay(5);  
+ 446   1              Send_Uart('\n');                        //换行  
+ 447   1      } 
+ 448          
+ 449          uchar table[]="温度:25℃   湿度:25%      光度:030";
+ 450          uchar code ta[]="0123456789- ";  
+ 451          uchar xm0,xm1,xm2;
+ 452          
+ 453          void main ()
+ 454          {
+ 455   1               
+ 456   1              set_w_num_H = ISP_READ(0x2c00)*256+ISP_READ(0x2c01);
+ 457   1              set_w_num_L = ISP_READ(0x2c02)*256+ISP_READ(0x2c03);
+ 458   1              set_s_num_H = ISP_READ(0x2c04)*256+ISP_READ(0x2c05);
+ 459   1              set_s_num_L = ISP_READ(0x2c06)*256+ISP_READ(0x2c07);
+ 460   1              set_g_num_H = ISP_READ(0x2c08)*256+ISP_READ(0x2c09);
+ 461   1              set_g_num_L = ISP_READ(0x2c0a)*256+ISP_READ(0x2c0b);
+ 462   1              Uart_Init();                                                                                    //波特率发生器 
+ 463   1              Delay(500);
+ 464   1              ESP8266_Set("AT+CWMODE=2");                                                     //设置路由器模式1 station,模式2 AP,模式3 station+AP混合模式   设置前wi
+             -fi的波特率设置成9600
+ 465   1              Delay(500);
+ 466   1              ESP8266_Set("AT+RST");                                                                  //重新启动wifi模块            
+ 467   1          Delay(500);
+ 468   1              ESP8266_Set("AT+CWSAP=\"wifi\",\"12345678\",11,4");     //AT+CWSAP="wifi_yuan","12345678",11,4  设置模块SSI
+             -D:WIFI, PWD:密码 及安全类型加密模式（WPA2-PSK） 
+ 469   1              Delay(500);
+ 470   1              ESP8266_Set("AT+CIPMUX=1");                                                             //开启多连接模式，允许多个各客户端接入 
+ 471   1              Delay(500);
+ 472   1              ESP8266_Set("AT+CIPSERVER=1,5000");                                     //启动TCP/IP 实现基于网络//控制         ESP8266_Set("AT+CIPSERVER=1,50
+             -00");  
+ 473   1              Delay(500);
+ 474   1              ESP8266_Set("AT+CIPSTO=0");                                                     //永远不超时
+ 475   1              Delay(500);
+ 476   1              LCDInit();      //lcd12864初始化
+ 477   1              Lcd_ShowSring(1,1,"温室大棚监控");
+ 478   1          Lcd_ShowSring(2,0,"温度:");
+ 479   1              Lcd_ShowSring(3,0,"湿度:");
+ 480   1              Lcd_ShowSring(4,0,"光度:");
+ 481   1              while(1){
+ 482   2      
+ 483   2                                 scant();       //按键扫描
+ 484   2                                if(Set_mode==0){       //模式
+ 485   3                                        
+C51 COMPILER V9.00   MAIN                                                                  05/12/2018 18:56:44 PAGE 9   
+
+ 486   3                                    RH();
+ 487   3                                    Lcd_Display2data(3,3,U8RH_data_H);   //显示湿度
+ 488   3                                        Lcd_WriteDate('%');   
+ 489   3                                        Lcd_Display2data(2,3,U8T_data_H);  //显示温度
+ 490   3                                        Lcd_WriteDate('C');
+ 491   3                                       // Delay(2000);
+ 492   3                                ////////////////////////////////////////////////////
+ 493   3                                        //采集光度
+ 494   3                            light=adc0832();
+ 495   3                                light=255-light;
+ 496   3                                        light=light/2.55;              //转换成100
+ 497   3                                Lcd_Display3data(4,3,light);           //显示光度
+ 498   3      
+ 499   3                                        campare_wendu();      //比较 报警
+ 500   3                                        ctrl();                  //控制继电器跟风扇
+ 501   3      
+ 502   3                                }                     
+ 503   2                      ///////////////////////////////////////////////////////////////////
+ 504   2                                      xm0=U8RH_data_H/10;//存放十位数据                 湿度
+ 505   2                              xm1=U8RH_data_H%10;  //存放个位数据              
+ 506   2                                      table[17]=ta[xm0];
+ 507   2                                      table[18]=ta[xm1]; 
+ 508   2                                      xm0=U8T_data_H/10;//存放十位数据
+ 509   2                                      xm1=U8T_data_H%10;  //存放个位数据
+ 510   2                                      table[5]=ta[xm0];
+ 511   2                                      table[6]=ta[xm1]; 
+ 512   2                                      xm0= light/100;//存放bai位数据
+ 513   2                                      xm1= light%100/10;  //存放shi位数据
+ 514   2                                      xm2= light%10;
+ 515   2                                      table[31]=ta[xm0];
+ 516   2                                      table[32]=ta[xm1];
+ 517   2                                      table[33]=ta[xm2];                                        
+ 518   2                                      ESP8266_Set("AT+CIPSEND=0,34");    ////发送字符长度  
+ 519   2                          Delay(100); 
+ 520   2                              ESP8266_Set(table);                      //发送数值 数组
+ 521   2                              Delay(100);
+ 522   2                        
+ 523   2                    }
+ 524   1                              
+ 525   1                              
+ 526   1                                      
+ 527   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3052    ----
+   CONSTANT SIZE    =    192    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     80      28
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,24 @@
+Removed Pin From Net: NetName=P37 Pin=*U1-1
+Removed Pin From Net: NetName=P36 Pin=*U1-5
+Removed Pin From Net: NetName=P36 Pin=*U1-6
+Removed Pin From Net: NetName=P35 Pin=*U1-7
+Removed Pin From Net: NetName=P31 Pin=ESP8266-1
+Removed Pin From Net: NetName=3.3V Pin=ESP8266-2
+Removed Pin From Net: NetName=GND Pin=ESP8266-7
+Removed Pin From Net: NetName=P30 Pin=ESP8266-8
+Removed Pin From Net: NetName=P06 Pin=P2-4
+Removed Pin From Net: NetName=P05 Pin=P2-5
+Removed Pin From Net: NetName=P04 Pin=P2-6
+Removed Pin From Net: NetName=P33 Pin=R1-2
+Removed Pin From Net: NetName=P34 Pin=R5-2
+Added Pin To Net: NetName=P35 Pin=*U1-1
+Added Pin To Net: NetName=P34 Pin=*U1-5
+Added Pin To Net: NetName=P34 Pin=*U1-6
+Added Pin To Net: NetName=P33 Pin=*U1-7
+Added Pin To Net: NetName=P27 Pin=P2-4
+Added Pin To Net: NetName=P26 Pin=P2-5
+Added Pin To Net: NetName=P25 Pin=P2-6
+Added Pin To Net: NetName=P37 Pin=R1-2
+Added Pin To Net: NetName=P36 Pin=R5-2
+Change Class Name : Old Net Name=ª®ª‹º‡øÿ New Net Name=Œ¬ “¥Û≈Ôº‡øÿ
+Added Room: Name=Œ¬ “¥Û≈Ôº‡øÿ
